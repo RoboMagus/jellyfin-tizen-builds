@@ -5,6 +5,11 @@ on:
     types: [build_new_release]
 
   workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Ref (branch / tag or hash) of 'jellyfin-web' to build for'
+        required: true 
+        type: string
   
 env:
   TIZEN_STUDIO_VER: 4.5.1
@@ -73,7 +78,7 @@ jobs:
         with:
           repository: 'RoboMagus/jellyfin-web'
           platform: 'github'
-          ref: 'tizen_exit_mod'
+          ref: ${{ inputs.ref }}
           path: 'jellyfin-web-mod'
 
       - name: Build jellyfin-web MOD
