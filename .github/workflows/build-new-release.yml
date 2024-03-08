@@ -103,13 +103,12 @@ jobs:
           sed -i "s|${GITHUB_WORKSPACE}/tizen-studio-data/tools/certificate-generator/certificates/distributor/tizen-distributor-signer.pwd|tizenpkcs12passfordsigner|g" ${GITHUB_WORKSPACE}/tizen-studio-data/profile/profiles.xml
           sed -i 's|password=""|password="tizenpkcs12passfordsigner"|g' ${GITHUB_WORKSPACE}/tizen-studio-data/profile/profiles.xml
 
-      - name: Package WGT PreRelease
+      - name: Package WGT MOD
         if: success() || steps.buildMod.conclusion == 'success'
         run: |
           expect ./package-pre.exp
-          mv ./jellyfin-tizen/prerelease/Jellyfin.wgt ./jellyfin-tizen/mod/Jellyfin.wgt 
 
       - name: Archive Debug Build
         uses: actions/upload-artifact@v3
         with:
-          path: jellyfin-tizen/mod/Jellyfin.wgt
+          path: jellyfin-tizen/prerelease/Jellyfin.wgt
