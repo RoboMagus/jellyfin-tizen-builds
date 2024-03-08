@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: 'Ref (branch / tag or hash) of 'jellyfin-web' to build for'
+        description: "Ref (branch / tag or hash) of 'jellyfin-web' to build for"
         required: true 
         type: string
   
