@@ -14,17 +14,16 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - run: env
-      
+
       - name: 'Checkout'
         uses: actions/checkout@v1
-        
+
       - name: Get current date
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
-      
+
       - name: Set Release Label
         uses: haya14busa/action-cond@v1
         id: label
@@ -32,18 +31,18 @@ jobs:
           cond: ${{ github.event.client_payload.release_label != 0 }}
           if_true: ${{ github.event.client_payload.release_label }}
           if_false: ${{ steps.date.outputs.date }}
-      
+
       - name: Setup Node.js environment
         uses: actions/setup-node@v3.0.0
         with:
           node-version: '>=14'
-          
+
       - name: Install Yarn
         run: npm install --global yarn
-          
+
       - name: Install Needed packages
         run: sudo apt install expect
-      
+
       - name: Download Tizen-Studio
         run: |
           curl -o tizen-installer "https://download.tizen.org/sdk/Installer/tizen-studio_${TIZEN_STUDIO_VER}/web-cli_Tizen_Studio_${TIZEN_STUDIO_VER}_ubuntu-64.bin"
@@ -54,22 +53,21 @@ jobs:
           ./tizen-installer --accept-license "${GITHUB_WORKSPACE}/tizen-studio"
           rm ./tizen-installer
           echo 'export PATH=$PATH:/tizen-studio/tools/ide/bin' >> .bashrc
-          
+
       - name: Prepare Tizen Certificate
         run: |
           ./tizen-studio/tools/ide/bin/tizen certificate -a Jellyfin -p 1234 -c NZ -s Aukland -ct Aukland -o Tizen -n Jellyfin -e jellyfin@example.org -f tizencert
           ./tizen-studio/tools/ide/bin/tizen security-profiles add -n Jellyfin -a "${GITHUB_WORKSPACE}/tizen-studio-data/keystore/author/tizencert.p12" -p 1234
           ./tizen-studio/tools/ide/bin/tizen cli-config "profiles.path=${GITHUB_WORKSPACE}/tizen-studio-data/profile/profiles.xml"
           chmod 755 "${GITHUB_WORKSPACE}/tizen-studio-data/profile/profiles.xml"
-        
-    
+
       - name: Clone jellyfin-tizen
         uses: sudosubin/git-clone-action@v1.0.1
         with:
           repository: 'jellyfin/jellyfin-tizen'
           platform: 'github'
           path: 'jellyfin-tizen'
-          
+
       - name: Clone jellyfin-web MOD
         uses: sudosubin/git-clone-action@v1.0.1
         with:
@@ -77,13 +75,13 @@ jobs:
           platform: 'github'
           ref: 'tizen_exit_mod'
           path: 'jellyfin-web-mod'
-                    
+
       - name: Build jellyfin-web MOD
         run: |
           cd jellyfin-web-mod
           SKIP_PREPARE=1 npm ci --no-audit
           USE_SYSTEM_FONTS=1 npm run build:production
-          
+
       - name: Build jellyfin-tizen MOD
         id: buildMod
 #         continue-on-error: true
@@ -103,15 +101,14 @@ jobs:
           sed -i "s|${GITHUB_WORKSPACE}/tizen-studio-data/keystore/author/tizencert.pwd|1234|g" ${GITHUB_WORKSPACE}/tizen-studio-data/profile/profiles.xml
           sed -i "s|${GITHUB_WORKSPACE}/tizen-studio-data/tools/certificate-generator/certificates/distributor/tizen-distributor-signer.pwd|tizenpkcs12passfordsigner|g" ${GITHUB_WORKSPACE}/tizen-studio-data/profile/profiles.xml
           sed -i 's|password=""|password="tizenpkcs12passfordsigner"|g' ${GITHUB_WORKSPACE}/tizen-studio-data/profile/profiles.xml
-      
+
       - name: Package WGT PreRelease
         if: success() || steps.buildMod.conclusion == 'success'
         run: |
           expect ./package-pre.exp
           mv ./jellyfin-tizen/prerelease/Jellyfin.wgt ./jellyfin-tizen/mod/Jellyfin.wgt 
-          
-          
-    - name: Archive Debug Build
-      uses: actions/upload-artifact@v3
-      with:
-        path: jellyfin-tizen/mod/Jellyfin.wgt
+
+      - name: Archive Debug Build
+        uses: actions/upload-artifact@v3
+        with:
+          path: jellyfin-tizen/mod/Jellyfin.wgt
